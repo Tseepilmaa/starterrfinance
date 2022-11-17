@@ -6,18 +6,51 @@
          inputDescription: ".add__description",
          inputValue: ".add__value",
          addBtn: ".add__btn",
+         incomeList: ".income__list",
+         expenseList: ".expenses__list"
      };
      return {
          getInput: function () {
              return {
                  type: document.querySelector(DOMstrings.inputType).value,
                  description: document.querySelector(DOMstrings.inputDescription).value,
-                 value: document.querySelector(DOMstrings.inputValue).value
+                 value: parseInt(document.querySelector(DOMstrings.inputValue).value)
              };
          },
 
          getDOMstrings: function () {
              return DOMstrings;
+         },
+
+         //utga oruulah talbar tsewerleh 
+         clearFields: function () {
+             var fields = document.querySelectorAll(DOMstrings.inputDescription + ", " + DOMstrings.inputValue);
+
+             //convert list to array
+             var fieldsArr=Array.prototype.slice.call(fields);
+             fieldsArr.forEach(function(el){
+                el.value="";
+             });
+
+             fieldsArr[0].focus();
+         },
+
+         addListItem: function (item, type) {
+             var html, list;
+             //ter html dotroo orlogo zarlagiin utguudiig replace ashiglaj oorchilj ogno
+             if (type === 'inc') {
+                 list = DOMstrings.incomeList;
+                 html = '<div class="item clearfix" id="income-%id%"><div class="item__description">$$Description$$</div><div class="right clearfix"><div class="item__value">$$value$$</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button></div></div></div>'
+             } else {
+                 list = DOMstrings.expenseList;
+                 html = '<div class="item clearfix" id="expense-%id%"><div class="item__description">$$Description$$</div><div class="right clearfix"><div class="item__value">$$value$$</div><div class="item__percentage">21%</div><div class="item__delete"><button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button> </div></div></div>'
+             }
+             html = html.replace('%id%', item.id);
+             html = html.replace('$$Description$$', item.description);
+             html = html.replace('$$value$$', item.value);
+             //beltgsn html.ee dom ruu hj ogno
+
+             document.querySelector(list).insertAdjacentHTML('beforeend', html);
          }
      };
  })();
@@ -35,11 +68,17 @@
          this.value = value;
      }
 
-     var i1 = new Income(1, "Tsalin", 2500000);
-     var i2 = new Income(2, "Uramshuulal", 25000000);
+     var calculateTotal = function(type){
+        var sum=0;
+        data.items[type].forEach(function(el){
+            sum+=el.value;
+        });
+
+        data.totals[type]=sum;
+     }
 
      var data = {
-         allItems: {
+         items: {
              inc: [],
              exp: []
          },
@@ -47,8 +86,66 @@
          totals: {
              inc: 0,
              exp: 0
+         },
+
+         tusuv: 0,
+         huvi:0
+     };
+
+     return {
+        tusuvTootsooloh: function(){
+
+            //Нийт орлогын нийлбэрийг тооцоолно
+            calculateTotal('inc');
+
+            //Нийт зарлагын нийлбэрийг тооцоолно
+            calculateTotal('exp');
+
+            //Төсвийг шинээр тооцоолно
+            data.tusuv = data.totals.inc-data.totals.exp;
+
+            //Орлого зарлагын хувийг тооцоолно
+            data.huvi=Math.round((data.totals.exp/data.totals.inc)*100);
+
+
+
+        },
+
+        tusuvAvah: function(){
+            return{
+                tusuv: data.tusuv,
+                huvi: data.huvi,
+                totalInc: data.totals.inc,
+                totalExp: data.totals.exp
+            }
+        },
+
+
+         addItem: function (type, desc, val) {
+             //console.log("item added");
+             var item, id;
+             if (data.items[type].length === 0) {
+                 id = 1;
+             } else {
+                 id = data.items[type][data.items[type].length - 1].id + 1;
+             }
+
+             if (type === "inc") {
+                 item = new Income(id, desc, val);
+             } else {
+                 item = new Expense(id, desc, val);
+             }
+             data.items[type].push(item);
+
+             return item;
+         },
+
+         seeData: function () {
+             return data;
          }
-     }
+
+     };
+
  })();
 
  //programiig holbogch controller
@@ -56,7 +153,29 @@
 
 
      var ctrlAddItem = function () {
-         console.log(uiController.getInput());
+
+         var input = uiController.getInput();
+         
+         //Оруулж байгаа талбар 2лаа хоосон биш үед доторх үйлдлүүдийг хийнэ.
+         if(input.description!==''&&input.value!==''){
+            //Олж авсан өгөгдлүүдээ санхүүгийн контроллэрт дамжуулж тэндээ хадгална
+            var item = financeController.addItem(input.type, input.description, input.value);
+
+            //Олж авсан өгөгдлүүдээ вэб дээрээ тохирох хэсэгт гаргана
+            uiController.addListItem(item, input.type);
+            uiController.clearFields();
+
+            //Төсвийг тооцоолно
+            financeController.tusuvTootsooloh();
+
+            //Эцсийн үлдэгдэл, тооцоог дэлгэцэнд гаргана
+            var tusuv=financeController.tusuvAvah();
+
+            //Төсвийн тооцоог дэлгэцэнд гаргах
+            console.log(tusuv);
+
+         }
+
      };
 
      var setupEventListeners = function () {
@@ -71,6 +190,9 @@
                  ctrlAddItem();
              }
          });
+
+
+
      }
 
      return {
