@@ -104,6 +104,16 @@
              document.querySelector(DOMstrings.dateLabel).textContent = today.getFullYear() + " оны " + today.getMonth() + " сарын ";
          },
 
+         changeType: function () {
+            //fields bol nodeList& array bish
+             var fields = document.querySelectorAll(DOMstrings.inputType + ', ' + DOMstrings.inputDescription + ', ' + DOMstrings.inputValue);
+             nodeListForEach(fields, function(el){
+                //el.iin klassiin jagsaaltand red focus bwal awch hayh bhgui bol nemeh
+                el.classList.toggle('red-focus');
+             });
+             document.querySelector(DOMstrings.addBtn).classList.toggle('red');
+         },
+
          deleteListItem: function (id) {
              var el = document.getElementById(id);
              el.parentNode.removeChild(el);
@@ -333,6 +343,9 @@
                  updateTusuv();
              }
          });
+
+         //
+         document.querySelector(DOM.inputType).addEventListener('change', uiController.changeType);
 
 
 
